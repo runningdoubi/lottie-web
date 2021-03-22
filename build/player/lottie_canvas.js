@@ -4894,6 +4894,7 @@ var filtersFactory = (function () {
 }());
 
 /* exported assetLoader */
+/* global swan */
 
 var assetLoader = (function () {
   function formatResponse(xhr) {
@@ -4908,6 +4909,13 @@ var assetLoader = (function () {
   }
 
   function loadAsset(path, callback, errorCallback) {
+    if (swan) {
+      var cache = swan.getStorageSync(path);
+      if (cache) {
+        callback(cache);
+        return;
+      }
+    }
     var response;
     var xhr = new XMLHttpRequest();
     // set responseType after calling open or IE will break.
@@ -4920,10 +4928,16 @@ var assetLoader = (function () {
         if (xhr.status === 200) {
           response = formatResponse(xhr);
           callback(response);
+          if (swan) {
+            swan.setStorageSync(path, response);
+          }
         } else {
           try {
             response = formatResponse(xhr);
             callback(response);
+            if (swan) {
+              swan.setStorageSync(path, response);
+            }
           } catch (err) {
             if (errorCallback) {
               errorCallback(err);
